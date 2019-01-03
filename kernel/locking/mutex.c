@@ -1032,7 +1032,7 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 		if (unlikely(signal_pending_state(state, current))
 			|| hung_long_and_fatal_signal_pending(current)) {
 #else
-		if (unlikely(signal_pending_state(state, current))) {
+                if (signal_pending_state(state, current)) {
 #endif
 			ret = -EINTR;
 			goto err;
