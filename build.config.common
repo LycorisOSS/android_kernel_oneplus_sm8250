@@ -2,6 +2,9 @@ BRANCH=android-4.19-stable
 KMI_GENERATION=0
 
 LLVM=1
+LD=ld.lld
+NM=llvm-nm
+OBJCOPY=llvm-objcopy
 DEPMOD=depmod
 CLANG_PREBUILT_BIN=prebuilts-master/clang/host/linux-x86/clang-r416183b/bin
 BUILDTOOLS_PREBUILT_BIN=build/build-tools/path/linux-x86

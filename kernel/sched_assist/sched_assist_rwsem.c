@@ -80,25 +80,3 @@ void rwsem_list_add(struct task_struct *tsk, struct list_head *entry, struct lis
 }
 #endif /* CONFIG_RWSEM_PRIO_AWARE */
 #endif /* CONFIG_MTK_TASK_TURBO */
-
-void rwsem_set_inherit_ux(struct task_struct *tsk, struct task_struct *waiter_task, struct task_struct *owner, struct rw_semaphore *sem)
-{
-	bool is_ux = test_set_inherit_ux(tsk);
-	if (waiter_task && is_ux) {
-		if (rwsem_owner_is_writer(owner) && sem && !sem->ux_dep_task) {
-			int type = get_ux_state_type(owner);
-			if ((UX_STATE_NONE == type) || (UX_STATE_INHERIT == type)) {
-				set_inherit_ux(owner, INHERIT_UX_RWSEM, tsk->ux_depth, tsk->ux_state);
-				sem->ux_dep_task = owner;
-			}
-		}
-	}
-}
-
-void rwsem_unset_inherit_ux(struct rw_semaphore *sem, struct task_struct *tsk)
-{
-	if (tsk && sem && sem->ux_dep_task == tsk) {
-		unset_inherit_ux(tsk, INHERIT_UX_RWSEM);
-		sem->ux_dep_task = NULL;
-	}
-}

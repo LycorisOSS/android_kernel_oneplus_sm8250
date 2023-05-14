@@ -1033,7 +1033,7 @@ __mutex_lock_common(struct mutex *lock, long state, unsigned int subclass,
 		 * against mutex_unlock() and wake-ups do not go missing.
 		 */
 #ifdef CONFIG_OPLUS_FEATURE_HUNG_TASK_ENHANCE
-		if (unlikely(signal_pending_state(state, current))
+		if (signal_pending_state(state, current)
 			|| hung_long_and_fatal_signal_pending(current)) {
 #else
                 if (signal_pending_state(state, current)) {
