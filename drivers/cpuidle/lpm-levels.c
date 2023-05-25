@@ -539,34 +539,6 @@ static int lpm_cpuidle_enter(struct cpuidle_device *dev,
 	if (!need_resched())
 		wfi();
 
-	trace_cpu_idle_enter(idx);
-	lpm_stats_cpu_enter(idx, 0);
-
-	if (need_resched())
-		goto exit;
-
-	cpuidle_set_idle_cpu(dev->cpu);
-	success = psci_enter_sleep(cpu, idx, true);
-	cpuidle_clear_idle_cpu(dev->cpu);
-
-exit:
-	lpm_stats_cpu_exit(idx, 0, success);
-
-	cluster_unprepare(cpu->parent, cpumask, idx, true, 0, success);
-	cpu_unprepare(cpu, idx, true);
-	dev->last_residency = ktime_us_delta(ktime_get(), start);
-	update_history(dev, idx);
-	trace_cpu_idle_exit(idx, success);
-	if (lpm_prediction_enabled && cpu->lpm_prediction) {
-		histtimer_cancel();
-		clusttimer_cancel();
-	}
-	if (cpu->bias) {
-		if (!idx)
-			biastimer_cancel();
-		cpu->bias = 0;
-	}
-	local_irq_enable();
 	return idx;
 }
 
