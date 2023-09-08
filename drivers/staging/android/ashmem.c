@@ -377,14 +377,38 @@ static int ashmem_mmap(struct file *file, struct vm_area_struct *vma)
 {
 	static struct file_operations vmfile_fops;
 	struct ashmem_area *asma = file->private_data;
-	int ret = 0;
+	unsigned long prot_mask;
+	size_t size;
 
 	mutex_lock(&ashmem_mutex);
 
 	/* user needs to SET_SIZE before mapping */
-	if (!asma->size) {
-		ret = -EINVAL;
-		goto out;
+	size = READ_ONCE(asma->size);
+	if (unlikely(!size))
+		return -EINVAL;
+
+	/* requested mapping size larger than object size */
+	if (vma->vm_end - vma->vm_start > PAGE_ALIGN(size))
+		return -EINVAL;
+
+	/* requested protection bits must match our allowed protection mask */
+	prot_mask = READ_ONCE(asma->prot_mask);
+	if (unlikely((vma->vm_flags & ~calc_vm_prot_bits(prot_mask, 0)) &
+		     calc_vm_prot_bits(PROT_MASK, 0)))
+		return -EPERM;
+
+	vma->vm_flags &= ~calc_vm_may_flags(~prot_mask);
+
+	if (!READ_ONCE(asma->file)) {
+		int ret = 0;
+
+		mutex_lock(&asma->mmap_lock);
+		if (!asma->file)
+			ret = ashmem_file_setup(asma, size, vma);
+		mutex_unlock(&asma->mmap_lock);
+
+		if (ret)
+			return ret;
 	}
 
 	/* requested mapping size larger than object size */
@@ -440,7 +464,7 @@ static int ashmem_mmap(struct file *file, struct vm_area_struct *vma)
 	 * shmem_set_file while we're in staging. -jstultz
 	 */
 	if (vma->vm_flags & VM_SHARED) {
-		ret = shmem_zero_setup(vma);
+		int ret = shmem_zero_setup(vma);
 		if (ret) {
 			fput(asma->file);
 			goto out;
