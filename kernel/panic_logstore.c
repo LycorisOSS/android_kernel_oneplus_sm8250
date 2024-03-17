@@ -49,12 +49,11 @@ void do_logstore(void)
 			pr_err("Unable to write log file, ret = %d", ret);
 			goto clean;
 		}
-	}
-
-	ret = vfs_fsync(f, 0);
-	if (ret) {
-		pr_err("Unable to sync log file, ret = %d", ret);
-		goto clean;
+		ret = vfs_fsync(f, 0);
+		if (ret) {
+			pr_err("Unable to sync log file, ret = %d", ret);
+			goto clean;
+		}
 	}
 
 	pr_info("Panic logstore is done.");
